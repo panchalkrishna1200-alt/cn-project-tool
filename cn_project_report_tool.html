@@ -1,0 +1,432 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+.app { padding: 1rem 0; }
+.header { margin-bottom: 1.5rem; }
+.header h1 { font-size: 20px; font-weight: 500; color: var(--color-text-primary); }
+.header p { font-size: 13px; color: var(--color-text-secondary); margin-top: 4px; }
+.progress-bar { display: flex; gap: 4px; margin-bottom: 1.5rem; }
+.progress-step { flex: 1; height: 4px; border-radius: 2px; background: var(--color-background-secondary); transition: background 0.3s; }
+.progress-step.done { background: #378ADD; }
+.progress-step.active { background: #7F77DD; }
+.sections { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.sec-btn { padding: 6px 14px; font-size: 12px; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-secondary); cursor: pointer; transition: all 0.15s; }
+.sec-btn:hover { background: var(--color-background-secondary); color: var(--color-text-primary); }
+.sec-btn.active { background: #E6F1FB; color: #0C447C; border-color: #85B7EB; font-weight: 500; }
+.sec-btn.done { background: #EAF3DE; color: #3B6D11; border-color: #97C459; }
+.panel { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.25rem; }
+.panel-title { font-size: 16px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+.panel-sub { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 1rem; }
+.field-group { margin-bottom: 1rem; }
+.field-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+.field-label span { font-size: 11px; color: var(--color-text-tertiary); }
+textarea, input[type=text], select { width: 100%; font-family: var(--font-sans); font-size: 13px; color: var(--color-text-primary); background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 8px 10px; resize: vertical; }
+textarea { min-height: 80px; }
+textarea:focus, input:focus, select:focus { outline: none; border-color: var(--color-border-primary); }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.tag { padding: 4px 10px; font-size: 12px; border-radius: 20px; cursor: pointer; border: 0.5px solid; transition: all 0.15s; }
+.tag.on { background: #E6F1FB; color: #185FA5; border-color: #85B7EB; }
+.tag.off { background: var(--color-background-secondary); color: var(--color-text-secondary); border-color: var(--color-border-tertiary); }
+.actions { display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; }
+.btn { padding: 8px 20px; font-size: 13px; border-radius: var(--border-radius-md); border: 0.5px solid; cursor: pointer; transition: all 0.15s; font-family: var(--font-sans); }
+.btn:active { transform: scale(0.98); }
+.btn-prev { background: var(--color-background-primary); color: var(--color-text-secondary); border-color: var(--color-border-tertiary); }
+.btn-prev:hover { background: var(--color-background-secondary); }
+.btn-next { background: #185FA5; color: #E6F1FB; border-color: #185FA5; }
+.btn-next:hover { background: #0C447C; }
+.btn-gen { background: #3B6D11; color: #EAF3DE; border-color: #3B6D11; font-weight: 500; }
+.btn-gen:hover { background: #27500A; }
+.tip { font-size: 12px; color: var(--color-text-tertiary); padding: 8px 12px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); margin-top: 10px; border-left: 3px solid #85B7EB; }
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+.summary-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 12px; }
+.summary-card .s-label { font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 4px; }
+.summary-card .s-val { font-size: 13px; color: var(--color-text-primary); line-height: 1.4; }
+.generating { text-align: center; padding: 2rem; }
+.spinner { width: 28px; height: 28px; border: 2.5px solid var(--color-border-tertiary); border-top-color: #378ADD; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<div class="app">
+<div class="header">
+  <h1>CN project report generator</h1>
+  <p>Fill in each section — your custom report will be created instantly</p>
+</div>
+
+<div class="progress-bar" id="progressBar">
+  <div class="progress-step active" id="p0"></div>
+  <div class="progress-step" id="p1"></div>
+  <div class="progress-step" id="p2"></div>
+  <div class="progress-step" id="p3"></div>
+  <div class="progress-step" id="p4"></div>
+</div>
+
+<div class="sections" id="secNav">
+  <button class="sec-btn active" onclick="goTo(0)">A. LAN Security</button>
+  <button class="sec-btn" onclick="goTo(1)">B. Threats</button>
+  <button class="sec-btn" onclick="goTo(2)">C. Network Usage</button>
+  <button class="sec-btn" onclick="goTo(3)">D. VoIP / Sinch</button>
+  <button class="sec-btn" onclick="goTo(4)">Review & Generate</button>
+</div>
+
+<div id="step0" class="panel">
+  <div class="panel-title">A. LAN security breach case study</div>
+  <div class="panel-sub">Document a real-world LAN breach scenario</div>
+  <div class="field-group">
+    <div class="field-label">Breach / case study name <span>required</span></div>
+    <input type="text" id="breachName" placeholder="e.g. Target Corporation Data Breach (2013)" />
+  </div>
+  <div class="field-group">
+    <div class="field-label">Cause of breach <span>what went wrong?</span></div>
+    <textarea id="breachCause" placeholder="e.g. Third-party vendor credentials stolen via phishing. Attacker used HVAC company VPN access to enter Target's flat network..."></textarea>
+  </div>
+  <div class="field-group">
+    <div class="field-label">Vulnerabilities exploited</div>
+    <div class="tag-list" id="vulnTags">
+      <div class="tag on" data-val="Flat network / no VLAN segmentation">No VLAN segmentation</div>
+      <div class="tag on" data-val="Weak third-party access controls">Weak vendor access</div>
+      <div class="tag on" data-val="Unmonitored IDS alerts">Unmonitored IDS</div>
+      <div class="tag on" data-val="Unpatched POS systems">Unpatched systems</div>
+      <div class="tag off" data-val="Weak passwords / no MFA">Weak passwords</div>
+      <div class="tag off" data-val="Open firewall ports">Open ports</div>
+      <div class="tag off" data-val="Misconfigured ACLs">Misconfigured ACLs</div>
+      <div class="tag off" data-val="Insider threat">Insider threat</div>
+    </div>
+  </div>
+  <div class="field-group">
+    <div class="field-label">Impact on the system / network</div>
+    <textarea id="breachImpact" placeholder="e.g. 40 million credit card records stolen, $202M in settlements, CEO resigned, brand reputation severely damaged..."></textarea>
+  </div>
+  <div class="tip">Tip: The more detail you add, the richer the report. Real breach names and real figures make for a stronger case study.</div>
+  <div class="actions">
+    <div style="font-size:12px; color:var(--color-text-tertiary);">Section 1 of 4</div>
+    <button class="btn btn-next" onclick="next(0)">Next →</button>
+  </div>
+</div>
+
+<div id="step1" class="panel" style="display:none;">
+  <div class="panel-title">B. Threat identification</div>
+  <div class="panel-sub">Select threats to include and add real-world examples</div>
+
+  <div class="field-group">
+    <div class="field-label">Threats to cover in your report</div>
+    <div class="tag-list" id="threatTags">
+      <div class="tag on" data-val="Malware">Malware</div>
+      <div class="tag on" data-val="Phishing">Phishing</div>
+      <div class="tag on" data-val="DDoS Attacks">DDoS attacks</div>
+      <div class="tag off" data-val="Ransomware">Ransomware</div>
+      <div class="tag off" data-val="SQL Injection">SQL injection</div>
+      <div class="tag off" data-val="Man-in-the-Middle (MitM)">Man-in-the-Middle</div>
+      <div class="tag off" data-val="Insider Threats">Insider threats</div>
+      <div class="tag off" data-val="Zero-Day Exploits">Zero-day exploits</div>
+    </div>
+  </div>
+
+  <div class="field-group">
+    <div class="field-label">Real-world example — Malware <span>optional override</span></div>
+    <input type="text" id="malwareEx" placeholder="Default: WannaCry (2017) — 200,000 systems in 150 countries" />
+  </div>
+  <div class="field-group">
+    <div class="field-label">Real-world example — Phishing <span>optional override</span></div>
+    <input type="text" id="phishEx" placeholder="Default: Google & Facebook $100M scam by Evaldas Rimasauskas" />
+  </div>
+  <div class="field-group">
+    <div class="field-label">Real-world example — DDoS <span>optional override</span></div>
+    <input type="text" id="ddosEx" placeholder="Default: GitHub 1.35 Tbps Memcached attack (2018)" />
+  </div>
+
+  <div class="field-group">
+    <div class="field-label">Any additional preventive measures to highlight</div>
+    <textarea id="threatPrev" placeholder="e.g. Our college uses Sophos Firewall and Cisco AMP for endpoint protection..." style="min-height:60px;"></textarea>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-prev" onclick="prev(1)">← Back</button>
+    <button class="btn btn-next" onclick="next(1)">Next →</button>
+  </div>
+</div>
+
+<div id="step2" class="panel" style="display:none;">
+  <div class="panel-title">C. Network usage analysis</div>
+  <div class="panel-sub">How third-party services use network resources</div>
+
+  <div class="field-group">
+    <div class="field-label">Third-party services to analyze</div>
+    <div class="tag-list" id="serviceTags">
+      <div class="tag on" data-val="Google Analytics">Google Analytics</div>
+      <div class="tag on" data-val="AWS / Cloud Storage">AWS / Cloud</div>
+      <div class="tag on" data-val="Cloudflare CDN">Cloudflare CDN</div>
+      <div class="tag on" data-val="Twilio / VoIP APIs">Twilio / VoIP APIs</div>
+      <div class="tag off" data-val="Facebook / Meta Pixel">Meta Pixel</div>
+      <div class="tag off" data-val="Stripe Payment Gateway">Stripe</div>
+      <div class="tag off" data-val="Firebase / Google Services">Firebase</div>
+      <div class="tag off" data-val="Zoom / Video Conferencing">Zoom</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="field-group">
+      <div class="field-label">Primary privacy concern</div>
+      <select id="privacyConcern">
+        <option>Cross-site tracking & cookies</option>
+        <option>Data residency / sovereignty</option>
+        <option>API key exposure</option>
+        <option>Unauthorized data sharing</option>
+        <option>GDPR / CCPA compliance gaps</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Main security risk</div>
+      <select id="secRisk">
+        <option>Supply chain attacks</option>
+        <option>Dependency hijacking (npm/PyPI)</option>
+        <option>API abuse / stolen keys</option>
+        <option>Man-in-the-Middle (unencrypted)</option>
+        <option>SDK vulnerabilities (unpatched CVEs)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="field-group">
+    <div class="field-label">Organization / use case context <span>optional</span></div>
+    <input type="text" id="orgContext" placeholder="e.g. An e-commerce website, a college ERP system, a hospital network..." />
+  </div>
+
+  <div class="field-group">
+    <div class="field-label">Additional notes on data usage or observations</div>
+    <textarea id="netNotes" placeholder="e.g. Observed using Wireshark that Google Analytics beacons fire on every page load, sending ~3KB of user data per visit..." style="min-height:60px;"></textarea>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-prev" onclick="prev(2)">← Back</button>
+    <button class="btn btn-next" onclick="next(2)">Next →</button>
+  </div>
+</div>
+
+<div id="step3" class="panel" style="display:none;">
+  <div class="panel-title">D. Sinch VoIP study</div>
+  <div class="panel-sub">Understanding VoIP systems, call flow, protocols, benefits & limitations</div>
+
+  <div class="field-group">
+    <div class="field-label">VoIP platform / focus</div>
+    <div class="tag-list" id="voipTags">
+      <div class="tag on" data-val="Sinch">Sinch</div>
+      <div class="tag off" data-val="Twilio">Twilio</div>
+      <div class="tag off" data-val="WebRTC (browser-based)">WebRTC</div>
+      <div class="tag off" data-val="Asterisk (open-source PBX)">Asterisk</div>
+      <div class="tag off" data-val="WhatsApp VoIP">WhatsApp VoIP</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="field-group">
+      <div class="field-label">Signaling protocol emphasis</div>
+      <select id="sigProtocol">
+        <option>SIP (Session Initiation Protocol)</option>
+        <option>H.323</option>
+        <option>WebRTC / ICE / STUN</option>
+        <option>MGCP</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Audio codec to highlight</div>
+      <select id="audioCodec">
+        <option>G.711 (64 Kbps, PSTN quality)</option>
+        <option>G.729 (8 Kbps, compressed)</option>
+        <option>Opus (adaptive 6–510 Kbps)</option>
+        <option>G.722 (wideband HD voice)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="field-group">
+    <div class="field-label">Key benefit to highlight</div>
+    <div class="tag-list" id="benefitTags">
+      <div class="tag on" data-val="Cost savings vs PSTN">Cost savings</div>
+      <div class="tag on" data-val="Global scalability">Global scale</div>
+      <div class="tag off" data-val="Rich API integration">API integration</div>
+      <div class="tag off" data-val="WebRTC browser calling">Browser calling</div>
+      <div class="tag off" data-val="Call recording & analytics">Analytics</div>
+    </div>
+  </div>
+
+  <div class="field-group">
+    <div class="field-label">Key limitation to highlight</div>
+    <div class="tag-list" id="limitTags">
+      <div class="tag on" data-val="Network dependency & latency sensitivity">Network dependency</div>
+      <div class="tag on" data-val="Power outage vulnerability">Power outages</div>
+      <div class="tag off" data-val="Security (vishing / SPIT)">Security risks</div>
+      <div class="tag off" data-val="QoS requirements">QoS requirements</div>
+      <div class="tag off" data-val="Emergency services (911) limitations">Emergency services</div>
+    </div>
+  </div>
+
+  <div class="field-group">
+    <div class="field-label">Any specific use case or industry example <span>optional</span></div>
+    <input type="text" id="voipUseCase" placeholder="e.g. Uber uses Sinch for driver-rider number masking; hospitals use VoIP for internal paging..." />
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-prev" onclick="prev(3)">← Back</button>
+    <button class="btn btn-next" onclick="next(3)">Next →</button>
+  </div>
+</div>
+
+<div id="step4" class="panel" style="display:none;">
+  <div class="panel-title">Review & generate report</div>
+  <div class="panel-sub">Check your inputs, then generate your personalized CN project report</div>
+  <div class="summary-grid" id="summaryGrid"></div>
+  <div class="field-group">
+    <div class="field-label">Student / group name <span>for title page</span></div>
+    <input type="text" id="studentName" placeholder="e.g. Group 4 — Raj, Priya, Mehul, Sara" />
+  </div>
+  <div class="row">
+    <div class="field-group">
+      <div class="field-label">College / institution</div>
+      <input type="text" id="collegeName" placeholder="e.g. CEPT University, Ahmedabad" />
+    </div>
+    <div class="field-group">
+      <div class="field-label">Academic year</div>
+      <input type="text" id="acadYear" placeholder="e.g. 2024–25" />
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-prev" onclick="prev(4)">← Back</button>
+    <button class="btn btn-gen" onclick="generateReport()">Generate report ↗</button>
+  </div>
+</div>
+
+<div id="stepGen" class="panel generating" style="display:none;">
+  <div class="spinner"></div>
+  <div style="font-size:15px; font-weight:500; color:var(--color-text-primary); margin-bottom:6px;">Creating your report...</div>
+  <div style="font-size:13px; color:var(--color-text-secondary);" id="genMsg">Compiling all sections</div>
+</div>
+
+<script>
+let current = 0;
+const steps = [0,1,2,3,4];
+
+function getTags(id) {
+  return [...document.querySelectorAll(`#${id} .tag.on`)].map(t => t.dataset.val).join(', ');
+}
+
+function goTo(n) {
+  document.getElementById('step'+current).style.display='none';
+  document.getElementById('step'+n).style.display='block';
+  current = n;
+  updateNav();
+  if(n===4) buildSummary();
+}
+function next(n) { goTo(n+1); }
+function prev(n) { goTo(n-1); }
+
+function updateNav() {
+  document.querySelectorAll('.progress-step').forEach((el,i) => {
+    el.className = 'progress-step' + (i<current?' done':i===current?' active':'');
+  });
+  document.querySelectorAll('.sec-btn').forEach((el,i) => {
+    el.className = 'sec-btn' + (i===current?' active':i<current?' done':'');
+  });
+}
+
+document.querySelectorAll('.tag').forEach(tag => {
+  tag.addEventListener('click', () => {
+    tag.className = tag.className.includes(' on') ? 'tag off' : 'tag on';
+  });
+});
+
+function buildSummary() {
+  const items = [
+    ['Breach case study', document.getElementById('breachName').value || 'Target Corp. Breach (2013)'],
+    ['Vulnerabilities selected', getTags('vulnTags') || '—'],
+    ['Threats to cover', getTags('threatTags') || '—'],
+    ['Third-party services', getTags('serviceTags') || '—'],
+    ['Privacy concern', document.getElementById('privacyConcern').value],
+    ['VoIP platform', getTags('voipTags') || 'Sinch'],
+    ['Signaling protocol', document.getElementById('sigProtocol').value],
+    ['Audio codec', document.getElementById('audioCodec').value]
+  ];
+  document.getElementById('summaryGrid').innerHTML = items.map(([l,v]) =>
+    `<div class="summary-card"><div class="s-label">${l}</div><div class="s-val">${v}</div></div>`
+  ).join('');
+}
+
+function generateReport() {
+  const data = {
+    student: document.getElementById('studentName').value || 'Student Group',
+    college: document.getElementById('collegeName').value || 'Engineering College',
+    year: document.getElementById('acadYear').value || '2024–25',
+    breachName: document.getElementById('breachName').value || 'Target Corporation Data Breach (2013)',
+    breachCause: document.getElementById('breachCause').value || 'Third-party HVAC vendor credentials stolen via phishing; flat network allowed lateral movement to POS systems.',
+    vulns: getTags('vulnTags') || 'No VLAN segmentation, Weak vendor access',
+    breachImpact: document.getElementById('breachImpact').value || '40 million credit card records stolen; $202M in settlements; CEO resigned.',
+    threats: getTags('threatTags') || 'Malware, Phishing, DDoS Attacks',
+    malwareEx: document.getElementById('malwareEx').value || 'WannaCry Ransomware (2017) — infected 200,000 systems in 150 countries.',
+    phishEx: document.getElementById('phishEx').value || 'Google & Facebook $100M scam by Evaldas Rimasauskas (2013–2015).',
+    ddosEx: document.getElementById('ddosEx').value || 'GitHub 1.35 Tbps Memcached DDoS attack (2018).',
+    threatPrev: document.getElementById('threatPrev').value,
+    services: getTags('serviceTags') || 'Google Analytics, AWS, Cloudflare CDN, Twilio',
+    privacyConcern: document.getElementById('privacyConcern').value,
+    secRisk: document.getElementById('secRisk').value,
+    orgContext: document.getElementById('orgContext').value,
+    netNotes: document.getElementById('netNotes').value,
+    voipPlatform: getTags('voipTags') || 'Sinch',
+    sigProtocol: document.getElementById('sigProtocol').value,
+    audioCodec: document.getElementById('audioCodec').value,
+    benefits: getTags('benefitTags') || 'Cost savings, Global scalability',
+    limits: getTags('limitTags') || 'Network dependency, Power outages',
+    voipUseCase: document.getElementById('voipUseCase').value
+  };
+
+  document.getElementById('step4').style.display='none';
+  document.getElementById('stepGen').style.display='block';
+
+  const msgs = ['Compiling breach case study...','Documenting threat analysis...','Analyzing network usage data...','Writing VoIP study...','Formatting & finalizing report...'];
+  let mi = 0;
+  const msgEl = document.getElementById('genMsg');
+  const iv = setInterval(() => { if(mi<msgs.length) msgEl.textContent = msgs[mi++]; else clearInterval(iv); }, 900);
+
+  const prompt = `Please create a detailed Computer Networks (CN) project report as a Word document (.docx) based on the following student inputs.
+
+STUDENT DETAILS:
+- Name/Group: ${data.student}
+- College: ${data.college}
+- Academic Year: ${data.year}
+
+SECTION A — LAN SECURITY BREACH:
+- Case: ${data.breachName}
+- Cause: ${data.breachCause}
+- Vulnerabilities: ${data.vulns}
+- Impact: ${data.breachImpact}
+
+SECTION B — THREATS:
+- Threats to cover: ${data.threats}
+- Malware example: ${data.malwareEx}
+- Phishing example: ${data.phishEx}
+- DDoS example: ${data.ddosEx}
+- Extra prevention notes: ${data.threatPrev || 'none'}
+
+SECTION C — NETWORK USAGE:
+- Services analyzed: ${data.services}
+- Primary privacy concern: ${data.privacyConcern}
+- Main security risk: ${data.secRisk}
+- Context: ${data.orgContext || 'general use case'}
+- Notes: ${data.netNotes || 'none'}
+
+SECTION D — VoIP:
+- Platform: ${data.voipPlatform}
+- Signaling protocol: ${data.sigProtocol}
+- Audio codec: ${data.audioCodec}
+- Key benefits: ${data.benefits}
+- Key limitations: ${data.limits}
+- Use case example: ${data.voipUseCase || 'none'}
+
+Please generate a professional, detailed 5-8 page Word document (.docx) report covering all four sections with diagrams described as ASCII art, tables, real-world analysis, and a conclusion. Include proper headings, subheadings, and a title page with the student details above.`;
+
+  setTimeout(() => {
+    clearInterval(iv);
+    sendPrompt(prompt);
+  }, 4800);
+}
+</script>
